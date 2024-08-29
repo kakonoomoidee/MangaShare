@@ -1,4 +1,3 @@
-// src/components/UploadForm.jsx
 "use client";
 
 import { useState } from "react";
@@ -10,7 +9,9 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function UploadForm() {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [ingredients, setIngredients] = useState("");
+  const [servings, setServings] = useState(1);
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
 
@@ -57,7 +58,9 @@ export default function UploadForm() {
 
       await addDoc(collection(db, "foodPosts"), {
         title: uniqueTitle,
-        description,
+        instructions,
+        ingredients: ingredients.split(",").map((item) => item.trim()), // Convert ingredients to an array
+        servings,
         photoUrls, // Array of URLs
         createdAt: new Date(),
         userId: auth.currentUser.uid, // Store the user ID
@@ -70,7 +73,9 @@ export default function UploadForm() {
     } finally {
       setUploading(false);
       setTitle("");
-      setDescription("");
+      setInstructions("");
+      setIngredients("");
+      setServings(1);
       setPhotos([]);
     }
   };
@@ -102,12 +107,36 @@ export default function UploadForm() {
           />
         </div>
         <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Bahan-Bahan:</label>
+          <input
+            type="text"
+            value={ingredients}
+            onChange={(e) => setIngredients(e.target.value)}
+            required
+            className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+            placeholder="Pisahkan dengan koma, contoh: garam, gula, telur"
+          />
+        </div>
+        <div className="mb-4">
           <label className="block text-sm font-medium mb-1">
-            Deskripsi Masakan:
+            Jumlah Porsi:
+          </label>
+          <input
+            type="number"
+            value={servings}
+            onChange={(e) => setServings(e.target.value)}
+            required
+            min="1"
+            className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">
+            Cara Memasak:
           </label>
           <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
             required
             rows="4"
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded"

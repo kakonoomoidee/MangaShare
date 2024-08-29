@@ -5,11 +5,17 @@ import {
   where,
   orderBy,
   onSnapshot,
+  deleteDoc,
+  doc,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import PostEditorModal from "./PostEditorModal"; // Import your PostEditorModal component
 
 export default function UserPosts({ userId }) {
   const [posts, setPosts] = useState([]);
+  const [isMenuOpen, setIsMenuOpen] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentPost, setCurrentPost] = useState(null);
 
   useEffect(() => {
     if (userId) {
@@ -36,13 +42,35 @@ export default function UserPosts({ userId }) {
     }
   }, [userId]);
 
+  const handleMenuToggle = (postId) => {
+    setIsMenuOpen((prev) => (prev === postId ? null : postId));
+  };
+
+  const handleDelete = async (postId) => {
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      await deleteDoc(doc(db, "foodPosts", postId));
+      setIsMenuOpen(null);
+    }
+  };
+
+  const handleEdit = (post) => {
+    setCurrentPost(post);
+    setIsEditModalOpen(true);
+    setIsMenuOpen(null);
+  };
+
+  const handleEditModalClose = () => {
+    setIsEditModalOpen(false);
+    setCurrentPost(null);
+  };
+
   return (
     <div className="grid grid-cols-2 gap-4">
       {posts.length > 0 ? (
         posts.map((post) => (
           <div
             key={post.id}
-            className="bg-gray-600 text-white shadow rounded-lg overflow-hidden flex"
+            className="bg-gray-600 text-white shadow rounded-lg overflow-hidden flex relative"
           >
             {/* Image Section */}
             <div className="w-1/2 h-40 overflow-hidden">
@@ -83,10 +111,43 @@ export default function UserPosts({ userId }) {
                 </p>
               </div>
             </div>
+
+            {/* Popup Menu */}
+            <div className="absolute top-2 right-2">
+              <button
+                onClick={() => handleMenuToggle(post.id)}
+                className="text-white text-lg"
+              >
+                •••
+              </button>
+              {isMenuOpen === post.id && (
+                <div className="absolute right-0 mt-2 w-48 bg-white text-black rounded-lg shadow-lg z-50">
+                  <button
+                    onClick={() => handleEdit(post)}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                  >
+                    Edit Post
+                  </button>
+                  <button
+                    onClick={() => handleDelete(post.id)}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                  >
+                    Delete Post
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ))
       ) : (
         <div className="text-center text-gray-400">No posts available</div>
+      )}
+      {currentPost && (
+        <PostEditorModal
+          isOpen={isEditModalOpen}
+          onClose={handleEditModalClose}
+          post={currentPost}
+        />
       )}
     </div>
   );
