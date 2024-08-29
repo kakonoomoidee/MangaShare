@@ -8,20 +8,22 @@ import {
 } from "@heroicons/react/24/outline";
 import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
-import profile from "../images/assets/profile-user.png"; // Import the image
-import PostEditorModal from "./PostEditorModal"; // Import your PostEditorModal component
+import profile from "../images/assets/profile-user.png";
+import PostEditorModal from "./PostEditorModal";
+import DeleteConfirmationModal from "../components/notification/DeleteConfirmationModal"; // Import the DeleteConfirmationModal component
 
 export default function PostModal({ isOpen, onClose, post }) {
   const [likes, setLikes] = useState(post.likes || 0);
   const [comments, setComments] = useState(post.comments || []);
   const [comment, setComment] = useState("");
   const [hasLiked, setHasLiked] = useState(false);
-  const [user, setUser] = useState(null); // Added state for user data
+  const [user, setUser] = useState(null);
   const [usernames, setUsernames] = useState({});
   const [isMenuOpen, setIsMenuOpen] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentPost, setCurrentPost] = useState(null);
-  const menuRef = useRef(null); // Ref for the dropdown menu
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // State for delete confirmation modal
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (!post || !post.id) return;
@@ -53,14 +55,14 @@ export default function PostModal({ isOpen, onClose, post }) {
     };
 
     checkIfLiked();
-    fetchUserData(); // Fetch user data when post changes
+    fetchUserData();
   }, [post]);
 
   useEffect(() => {
     const fetchUsernames = async () => {
       const usernamesObj = {};
       for (const comment of comments) {
-        if (!comment.userId) continue; // Skip if userId is not defined
+        if (!comment.userId) continue;
         const userDoc = await getDoc(doc(db, "users", comment.userId));
         if (userDoc.exists()) {
           usernamesObj[comment.userId] = userDoc.data().username;
@@ -71,7 +73,6 @@ export default function PostModal({ isOpen, onClose, post }) {
     fetchUsernames();
   }, [comments]);
 
-  // Handle click outside of dropdown menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -100,11 +101,10 @@ export default function PostModal({ isOpen, onClose, post }) {
     setIsMenuOpen((prev) => (prev === postId ? null : postId));
   };
 
-  const handleDelete = async (postId) => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
-      await deleteDoc(doc(db, "foodPosts", postId));
-      setIsMenuOpen(null);
-    }
+  const handleDelete = async () => {
+    await deleteDoc(doc(db, "foodPosts", post.id));
+    setIsDeleteModalOpen(false);
+    onClose(); // Optionally close the post modal
   };
 
   const handleEdit = (post) => {
@@ -130,7 +130,6 @@ export default function PostModal({ isOpen, onClose, post }) {
 
   if (!isOpen) return null;
 
-  // Slider settings
   const sliderSettings = {
     dots: true,
     infinite: true,
@@ -141,7 +140,6 @@ export default function PostModal({ isOpen, onClose, post }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      {/* Close button */}
       <button
         className="absolute top-3 right-28 text-white text-2xl"
         onClick={onClose}
@@ -149,7 +147,6 @@ export default function PostModal({ isOpen, onClose, post }) {
         &times;
       </button>
       <div className="bg-gray-800 w-[80vw] h-[90vh] p-4 rounded-lg shadow-lg relative flex">
-        {/* Post Image Slider */}
         <div className="w-1/2 h-full overflow-hidden rounded-lg mr-4">
           {post.photoUrls && post.photoUrls.length > 0 ? (
             <Slider {...sliderSettings}>
@@ -174,10 +171,9 @@ export default function PostModal({ isOpen, onClose, post }) {
         </div>
 
         <div className="w-1/3 h-full overflow-hidden rounded-lg mr-4">
-          {/* User info */}
           <div className="flex items-center mb-4 border-b border-gray-600 pb-4">
             <img
-              src={user?.photoURL || profile.src} // Fallback to default photo if userPhotoURL is not available
+              src={user?.photoURL || profile.src}
               alt="User"
               className="w-10 h-10 rounded-full mr-3"
             />
@@ -186,7 +182,6 @@ export default function PostModal({ isOpen, onClose, post }) {
             </h3>
           </div>
 
-          {/* Title */}
           {post.title && (
             <h2 className="text-2xl font-bold text-white mb-2">{post.title}</h2>
           )}
@@ -194,11 +189,10 @@ export default function PostModal({ isOpen, onClose, post }) {
           <h4 className="text-lg font-semibold text-white mb-1">
             Ingredients:
           </h4>
-          {/* Ingredients */}
           {post.ingredients && (
             <div
               className="flex-1 overflow-y-auto bg-gray-600 p-4 rounded-lg mb-4"
-              style={{ maxHeight: "600px" }}
+              style={{ maxHeight: "150px" }}
             >
               <ul className="list-disc list-inside text-white">
                 {post.ingredients.map((ingredient, index) => (
@@ -211,7 +205,6 @@ export default function PostModal({ isOpen, onClose, post }) {
           <h4 className="text-lg font-semibold text-white mb-1">
             Instructions:
           </h4>
-          {/* Instructions */}
           {post.instructions && (
             <div
               className="flex-1 overflow-y-auto bg-gray-600 p-4 rounded-lg mb-4"
@@ -222,12 +215,10 @@ export default function PostModal({ isOpen, onClose, post }) {
           )}
         </div>
 
-        {/* Content Section */}
         <div className="w-1/4 flex flex-col h-full relative">
-          {/* Dropdown Menu */}
           <button
             onClick={(e) => {
-              e.stopPropagation(); // Prevent click from opening the post
+              e.stopPropagation();
               handleMenuToggle(post.id);
             }}
             className="absolute top-1 right-3 text-white text-sm z-50"
@@ -236,7 +227,7 @@ export default function PostModal({ isOpen, onClose, post }) {
           </button>
           {isMenuOpen === post.id && (
             <div
-              ref={menuRef} // Attach ref to the dropdown menu
+              ref={menuRef}
               className="absolute right-6 bg-gray-800 border border-gray-700 rounded mt-6 w-40 shadow-lg"
             >
               <button
@@ -247,7 +238,7 @@ export default function PostModal({ isOpen, onClose, post }) {
                 Edit Post
               </button>
               <button
-                onClick={() => handleDelete(post.id)}
+                onClick={() => setIsDeleteModalOpen(true)} // Open the delete confirmation modal
                 className="w-full text-left text-red-500 px-4 py-2 hover:bg-gray-700 flex items-center"
               >
                 <TrashIcon className="w-5 h-5 mr-3" />
@@ -256,7 +247,6 @@ export default function PostModal({ isOpen, onClose, post }) {
             </div>
           )}
           <h3 className="text-lg font-semibold mb-2 text-white">Comments</h3>
-          {/* Comments Section */}
           <div
             className="flex-1 overflow-y-auto bg-gray-600 p-4 rounded-lg mb-4"
             style={{ maxHeight: "600px" }}
@@ -274,7 +264,6 @@ export default function PostModal({ isOpen, onClose, post }) {
               )}
             </ul>
           </div>
-          {/* Like button with menu */}
           <div className="relative flex flex-col">
             <button
               onClick={handleLike}
@@ -286,7 +275,6 @@ export default function PostModal({ isOpen, onClose, post }) {
               {likes}
             </button>
           </div>
-          {/* Comment Form */}
           <form
             onSubmit={handleCommentSubmit}
             className="flex bg-gray-800 p-2 rounded-lg"
@@ -307,6 +295,29 @@ export default function PostModal({ isOpen, onClose, post }) {
           </form>
         </div>
       </div>
+
+      {isEditModalOpen && (
+        <PostEditorModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          post={currentPost}
+          onPostUpdated={async () => {
+            if (post && post.id) {
+              const postDoc = await getDoc(doc(db, "foodPosts", post.id));
+              if (postDoc.exists()) {
+                setCurrentPost(postDoc.data());
+              }
+            }
+          }}
+        />
+      )}
+
+      {/* DeleteConfirmationModal Component */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

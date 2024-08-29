@@ -12,11 +12,14 @@ export default function EditProfileModal({ isOpen, onClose }) {
   const [photo, setPhoto] = useState(null);
   const [photoURL, setPhotoURL] = useState(null);
   const [username, setUsername] = useState("");
+  const [fullname, setfullname] = useState(""); // Added state for full name
   const [bio, setBio] = useState("");
   const [editorPhoto, setEditorPhoto] = useState(null);
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [croppedImage, setCroppedImage] = useState(null);
-  const cropperRef = useRef(null); // Reference for the Cropper instance
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const cropperRef = useRef(null);
 
   useEffect(() => {
     if (user && isOpen) {
@@ -27,11 +30,13 @@ export default function EditProfileModal({ isOpen, onClose }) {
           if (userDoc.exists()) {
             const data = userDoc.data();
             setUsername(data.username || "");
+            setfullname(data.fullname || ""); // Fetching full name
             setBio(data.bio || "");
             setPhotoURL(data.photoURL || "/default-avatar.png");
           }
         } catch (error) {
           console.error("Error fetching profile data:", error);
+          setError("Failed to load profile data.");
         }
       };
       fetchProfileData();
@@ -40,18 +45,22 @@ export default function EditProfileModal({ isOpen, onClose }) {
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
-    setPhoto(file);
-    setEditorPhoto(URL.createObjectURL(file));
-    setIsCropModalOpen(true);
+    if (file) {
+      setPhoto(file);
+      setEditorPhoto(URL.createObjectURL(file));
+      setIsCropModalOpen(true);
+    }
   };
 
   const handleSave = async () => {
     if (!user) return;
 
+    setLoading(true);
+    setError(null);
+
     try {
       const userRef = doc(db, "users", user.uid);
 
-      // Upload cropped photo if present
       if (croppedImage) {
         const photoRef = ref(storage, `profilePhotos/${user.uid}`);
         await uploadBytes(photoRef, croppedImage);
@@ -59,12 +68,14 @@ export default function EditProfileModal({ isOpen, onClose }) {
         await updateDoc(userRef, { photoURL: newPhotoURL });
       }
 
-      // Update username and bio
-      await updateDoc(userRef, { username, bio });
+      await updateDoc(userRef, { username, fullname, bio }); // Update full name
 
-      onClose(); // Close the modal after saving
+      onClose();
     } catch (error) {
       console.error("Error updating profile:", error);
+      setError("Failed to update profile. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -87,12 +98,43 @@ export default function EditProfileModal({ isOpen, onClose }) {
         <div className="bg-gray-900 text-white p-6 rounded-lg w-1/3 relative">
           <h2 className="text-xl font-bold mb-4">Edit Profile</h2>
 
-          <div className="mb-4">
-            <input type="file" accept="image/*" onChange={handlePhotoChange} />
+          {error && <p className="text-red-500 mb-4">{error}</p>}
+          {loading && <p className="text-blue-500 mb-4">Saving...</p>}
+
+          <div className="mb-4 flex items-center bg-gray-800 rounded-2xl">
+            <img
+              src={photoURL}
+              alt="Profile"
+              className="w-24 h-24 rounded-full mb-2 object-cover px-4 py-4"
+            />
+            <div className="mb-4 flex flex-col">
+              <span className="text-xl font-bold mb-1">{username}</span>{" "}
+              <span className="text-md text-gray-400">{fullname}</span>{" "}
+            </div>
+            <label className="ml-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+              <span className="ml-12 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded">
+                Change Photo
+              </span>
+            </label>
           </div>
 
           <div className="mb-4">
-            <label className="block mb-1">Username:</label>
+            <label className="block mb-1">Full Name</label>
+            <input
+              type="text"
+              value={fullname}
+              onChange={(e) => setfullname(e.target.value)}
+              className="w-full p-2 bg-gray-800 border border-gray-700 rounded"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block mb-1">Username</label>
             <input
               type="text"
               value={username}
@@ -101,7 +143,7 @@ export default function EditProfileModal({ isOpen, onClose }) {
             />
           </div>
           <div className="mb-4">
-            <label className="block mb-1">Bio:</label>
+            <label className="block mb-1">Bio</label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
@@ -118,6 +160,7 @@ export default function EditProfileModal({ isOpen, onClose }) {
             <button
               onClick={handleSave}
               className="bg-blue-600 hover:bg-blue-700 text-white py-1 px-4 rounded"
+              disabled={loading}
             >
               Save
             </button>
@@ -132,7 +175,7 @@ export default function EditProfileModal({ isOpen, onClose }) {
             <h2 className="text-xl font-bold mb-4">Crop Photo</h2>
             <Cropper
               src={editorPhoto}
-              ref={cropperRef} // Reference to the Cropper instance
+              ref={cropperRef}
               style={{ height: 400, width: "100%" }}
               aspectRatio={1}
               guides={false}
