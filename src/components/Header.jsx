@@ -4,6 +4,7 @@ import { auth } from "../lib/firebase";
 import { useRouter } from "next/navigation";
 import { FaUserCircle, FaSignInAlt, FaSignOutAlt } from "react-icons/fa";
 import { useState, useEffect, useRef } from "react";
+import logo from "../images/assets/header-logo.png"; // Import the image
 
 export default function Header() {
   const [user] = useAuthState(auth);
@@ -45,11 +46,7 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 w-full bg-gray-900 shadow-md z-50 flex items-center p-4 h-16">
       <div className="flex items-center">
-        <img
-          src="../images/assets/header-logo.png"
-          alt="Logo"
-          className="w-32 h-auto"
-        />
+        <img src={logo.src} alt="Logo" className="w-14 h-auto" />
       </div>
       <div className="flex-grow flex justify-end">
         {user ? (

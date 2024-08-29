@@ -5,6 +5,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "../lib/firebase";
 import EditProfileModal from "./EditProfileModal";
 import UserPosts from "./UserPosts";
+import profile from "../images/assets/profile-user.png"; // Import the image
 
 export default function ProfileContent() {
   const [user] = useAuthState(auth);
@@ -42,7 +43,7 @@ export default function ProfileContent() {
     <div className="flex flex-col min-h-screen pt-16 pl-64 p-4 bg-gray-800 text-white mt-5">
       <div className="flex items-center space-x-4 mb-6 ml-5">
         <img
-          src={profileData.photoURL || "/default-avatar.png"}
+          src={profileData.photoURL || profile.src}
           alt="Profile"
           className="w-40 h-40 rounded-full"
         />
