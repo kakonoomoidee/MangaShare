@@ -1,16 +1,31 @@
-// src/components/Header.jsx
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
 import { useRouter } from "next/navigation";
 import { FaUserCircle, FaSignInAlt, FaSignOutAlt } from "react-icons/fa";
 import { useState, useEffect, useRef } from "react";
+import { doc, getDoc } from "firebase/firestore";
 import logo from "../images/assets/header-logo.png"; // Import the image
 
 export default function Header() {
   const [user] = useAuthState(auth);
+  const [userData, setUserData] = useState(null);
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Fetch user data from Firestore
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user && user.uid) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserData(userDoc.data());
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
 
   const handleLoginClick = () => {
     router.push("/login");
@@ -51,11 +66,11 @@ export default function Header() {
       <div className="flex-grow flex justify-end">
         {user ? (
           <div className="relative flex items-center">
-            {user.photoURL ? (
+            {userData?.photoURL ? (
               <img
-                src={user.photoURL}
+                src={userData.photoURL}
                 alt="Profile"
-                className="w-12 h-12 rounded-full cursor-pointer"
+                className="w-9 h-9 rounded-full cursor-pointer"
                 onClick={toggleDropdown}
               />
             ) : (

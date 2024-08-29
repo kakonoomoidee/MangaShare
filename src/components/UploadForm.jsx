@@ -64,6 +64,8 @@ export default function UploadForm() {
         photoUrls, // Array of URLs
         createdAt: new Date(),
         userId: auth.currentUser.uid, // Store the user ID
+        likes: 0, // Initialize likes to 0
+        comments: 0, // Initialize comments to 0
       });
 
       toast.success("Upload successful!");

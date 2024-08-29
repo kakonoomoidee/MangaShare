@@ -20,7 +20,7 @@ export default function PostEditorModal({ isOpen, onClose, post }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg">
-        <h2 className="text-2xl font-bold mb-4">Edit Post</h2>
+        <h2 className="text-2xl font-bold mb-4">Edit Postsadasd</h2>
         <input
           type="text"
           value={title}

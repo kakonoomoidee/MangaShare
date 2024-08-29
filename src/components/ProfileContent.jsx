@@ -41,23 +41,30 @@ export default function ProfileContent() {
 
   return (
     <div className="flex flex-col min-h-screen pt-16 pl-64 p-4 bg-gray-800 text-white mt-5">
-      <div className="flex items-center space-x-4 mb-6 ml-5">
-        <img
-          src={profileData.photoURL || profile.src}
-          alt="Profile"
-          className="w-40 h-40 rounded-full"
-        />
-        <div>
-          <h2 className="text-2xl font-bold">{profileData.username}</h2>
-          <p className="text-gray-400">{profileData.bio}</p>
-          <button
-            onClick={handleEditClick}
-            className="mt-2 bg-red-600 hover:bg-red-700 text-white py-1 px-4 rounded"
-          >
-            Edit profile
-          </button>
+      {/* Profile header */}
+      <div className="flex flex-col mb-6 ml-5">
+        <div className="flex items-center space-x-4 mb-6">
+          <img
+            src={profileData.photoURL || profile.src}
+            alt="Profile"
+            className="w-40 h-40 rounded-full"
+          />
+          <div>
+            <h2 className="text-2xl font-bold">{profileData.username}</h2>
+            <p className="text-gray-400">{profileData.bio}</p>
+            <button
+              onClick={handleEditClick}
+              className="mt-2 bg-gray-600 hover:bg-gray-700 text-white py-1 px-4 rounded"
+            >
+              Edit profile
+            </button>
+          </div>
         </div>
+        {/* Horizontal line */}
+        <hr className="border-gray-600 mb-6" />
       </div>
+
+      {/* User posts */}
       <div className="overflow-y-auto flex-grow">
         <UserPosts userId={user.uid} />
       </div>

@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Add this in your global CSS file or directly in your component */
+@import "~slick-carousel/slick/slick.css";
+@import "~slick-carousel/slick/slick-theme.css";
+
 /* width */
 ::-webkit-scrollbar {
   width: 0;
