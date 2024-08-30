@@ -7,10 +7,10 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
-import { db, auth } from "../lib/firebase";
-import profile from "../images/assets/profile-user.png";
+import { db, auth } from "../../lib/firebase";
+import profile from "../../images/assets/profile-user.png";
 import PostEditorModal from "./PostEditorModal";
-import DeleteConfirmationModal from "../components/notification/DeleteConfirmationModal"; // Import the DeleteConfirmationModal component
+import DeleteConfirmationModal from "../../components/notification/DeleteConfirmationModal"; // Import the DeleteConfirmationModal component
 
 export default function PostModal({ isOpen, onClose, post }) {
   const [likes, setLikes] = useState(post.likes || 0);

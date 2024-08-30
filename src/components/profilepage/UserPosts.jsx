@@ -8,7 +8,8 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { UserIcon } from "@heroicons/react/24/outline";
+import { db } from "../../lib/firebase";
 import PostModal from "./PostModal"; // Import the PostModal component
 
 export default function UserPosts({ userId }) {
@@ -97,7 +98,8 @@ export default function UserPosts({ userId }) {
                     })}
                   </span>
                   <span className="mx-2">•</span>
-                  <span>{post.servings} servings</span>
+                  <UserIcon className="w-4 h-4" />
+                  <span className="ml-1">{post.servings} servings</span>
                 </p>
                 <p className="text-sm text-gray-200 mb-2">
                   {post.ingredients && post.ingredients.length > 0

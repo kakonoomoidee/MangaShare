@@ -2,10 +2,10 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth, db } from "../lib/firebase";
+import { auth, db } from "../../lib/firebase";
 import EditProfileModal from "./EditProfileModal";
 import UserPosts from "./UserPosts";
-import profile from "../images/assets/profile-user.png"; // Import the image
+import profile from "../../images/assets/profile-user.png"; // Import the image
 
 export default function ProfileContent() {
   const [user] = useAuthState(auth);

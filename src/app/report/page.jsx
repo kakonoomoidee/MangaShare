@@ -1,0 +1,19 @@
+"use client";
+
+import Header from "../../components/Header";
+import LeftSidebar from "../../components/LeftSidebar";
+import ReportPage from "../../components/reportpage/ReportPage"; // Import HomePage component
+
+export default function Page() {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <div className="flex flex-grow">
+        <LeftSidebar />
+        <main className="flex-grow ml-64 mt-16 p-4 bg-gray-800">
+          <ReportPage />
+        </main>
+      </div>
+    </div>
+  );
+}

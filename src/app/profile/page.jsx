@@ -3,7 +3,7 @@
 
 import Header from "../../components/Header";
 import LeftSidebar from "../../components/LeftSidebar";
-import ProfileContent from "../../components/ProfileContent";
+import ProfileContent from "../../components/profilepage/ProfileContent";
 
 export default function ProfilePage() {
   return (

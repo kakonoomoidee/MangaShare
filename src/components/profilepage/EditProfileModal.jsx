@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { storage, db } from "../lib/firebase";
+import { storage, db } from "../../lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../lib/firebase";
+import { auth } from "../../lib/firebase";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 

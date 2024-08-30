@@ -3,7 +3,7 @@
 
 import Header from "../../components/Header";
 import LeftSidebar from "../../components/LeftSidebar";
-import UploadForm from "../../components/UploadForm";
+import UploadForm from "../../components/createpage/UploadForm";
 
 export default function CreatePage() {
   return (

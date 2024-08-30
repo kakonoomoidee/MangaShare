@@ -2,7 +2,7 @@
 
 import Header from "../../components/Header";
 import LeftSidebar from "../../components/LeftSidebar";
-import SearchPage from "../../components/SearchPage";
+import SearchPage from "../../components/searchpage/SearchPage";
 
 export default function Page() {
   return (

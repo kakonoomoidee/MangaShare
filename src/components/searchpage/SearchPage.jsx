@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../lib/firebase";
-import Post from "./Post";
+import { db } from "../../lib/firebase";
+import Post from "./post";
 import User from "./User"; // Assuming you have a User component for displaying user details
 
 export default function SearchPage() {

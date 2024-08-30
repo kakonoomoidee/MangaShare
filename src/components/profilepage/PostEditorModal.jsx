@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Slider from "react-slick";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db, auth } from "../lib/firebase";
+import { db, auth } from "../../lib/firebase";
 
 export default function PostEditorModal({ isOpen, onClose, post }) {
   const [title, setTitle] = useState(post.title || "");

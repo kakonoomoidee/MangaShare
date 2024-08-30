@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { storage, db, auth } from "../lib/firebase";
+import { storage, db, auth } from "../../lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { toast, ToastContainer } from "react-toastify";
