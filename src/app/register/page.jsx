@@ -1,17 +1,23 @@
 "use client";
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+} from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../../lib/firebase";
 import { useRouter } from "next/navigation";
-import backround from "../../images/login-register/bg.png"; // Import the image
+import background from "../../images/login-register/bg.png"; // Import the image
+import { FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullname, setFullname] = useState(""); // New state for fullname
-  const [username, setUsername] = useState(""); // New state for username
+  const [fullname, setFullname] = useState(""); // State for fullname
+  const [username, setUsername] = useState(""); // State for username
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
   const router = useRouter();
 
   const handleRegister = async () => {
@@ -47,57 +53,86 @@ export default function Register() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      router.push("/");
+    } catch (error) {
+      console.error("Error signing in with Google:", error);
+      setError(error.message);
+    }
+  };
+
   return (
     <div
       className="bg-cover bg-center min-h-screen flex items-center justify-center"
       style={{
-        backgroundImage: `url(${backround.src})`,
+        backgroundImage: `url(${background.src})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         width: "auto",
         height: "auto",
       }}
     >
-      <div className="bg-white bg-opacity-45 p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4">Register</h1>
+      <div className="bg-gray-900 bg-opacity-80 p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h1 className="text-2xl font-bold mb-4 text-white">Register</h1>
         <input
           type="text"
           placeholder="Full Name"
           value={fullname}
           onChange={(e) => setFullname(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="w-full p-2 mb-4 border border-gray-600 rounded bg-gray-700 text-white placeholder-gray-300"
         />
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="w-full p-2 mb-4 border border-gray-600 rounded bg-gray-700 text-white placeholder-gray-300"
         />
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="w-full p-2 mb-4 border border-gray-600 rounded bg-gray-700 text-white placeholder-gray-300"
         />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
-        />
-        {error && <div className="text-red-500 mb-4">{error}</div>}
+        <div className="relative mb-4">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-2 border border-gray-600 rounded bg-gray-700 text-white placeholder-gray-300"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white"
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </button>
+        </div>
+        {error && <div className="text-red-400 mb-4">{error}</div>}
         <button
           onClick={handleRegister}
-          className="w-full bg-purple-600 text-white py-2 rounded"
+          className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-500 mb-4"
         >
           Register
         </button>
+        <button
+          onClick={handleGoogleSignIn}
+          className="w-full bg-blue-600 text-white py-2 rounded flex items-center justify-center hover:bg-blue-500 mb-4"
+        >
+          <FaGoogle className="mr-2" />
+          Continue with Google
+        </button>
         <div className="mt-4 text-center">
-          <span>Already have an account? </span>
+          <span className="text-gray-300">Already have an account? </span>
           <button
             onClick={() => router.push("/login")}
-            className="text-purple-600"
+            className="text-blue-500 hover:underline"
           >
             Login
           </button>

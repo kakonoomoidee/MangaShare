@@ -1,13 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Slider from "react-slick";
 import {
   HeartIcon,
   PaperAirplaneIcon,
   FlagIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
 import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 import profile from "../../images/assets/profile-user.png";
+import { getStorage, ref, deleteObject } from "firebase/storage";
 
 export default function PostModal({ isOpen, onClose, post }) {
   const [likes, setLikes] = useState(post.likes || 0);
@@ -18,7 +21,7 @@ export default function PostModal({ isOpen, onClose, post }) {
   const [usernames, setUsernames] = useState({});
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // State for delete confirmation modal
-  const menuRef = useRef(null);
+  const router = useRouter(); // Initialize useRouter
 
   useEffect(() => {
     if (!post || !post.id) return;
@@ -71,7 +74,8 @@ export default function PostModal({ isOpen, onClose, post }) {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      // Check if click is outside the menu
+      if (!event.target.closest(".menu-container")) {
         setIsMenuOpen(false);
       }
     };
@@ -81,6 +85,11 @@ export default function PostModal({ isOpen, onClose, post }) {
   }, []);
 
   const handleLike = async () => {
+    if (!auth.currentUser) {
+      router.push("/login"); // Redirect to login page if not authenticated
+      return;
+    }
+
     if (!hasLiked) {
       const newLikes = likes + 1;
       setLikes(newLikes);
@@ -99,6 +108,28 @@ export default function PostModal({ isOpen, onClose, post }) {
   };
 
   const handleDelete = async () => {
+    const storage = getStorage();
+
+    // Delete each image in the `photoUrls` array
+    if (post.photoUrls) {
+      for (const url of post.photoUrls) {
+        // Extract the file name from the URL
+        const fileName = url.substring(url.lastIndexOf("/") + 1);
+        const storageRef = ref(
+          storage,
+          `foodPhotos/${auth.currentUser.uid}/${fileName}`
+        );
+
+        try {
+          await deleteObject(storageRef);
+          console.log(`Successfully deleted ${fileName}`);
+        } catch (error) {
+          console.error(`Failed to delete ${fileName}:`, error.message);
+        }
+      }
+    }
+
+    // Delete the post document from Firestore
     await deleteDoc(doc(db, "foodPosts", post.id));
     setIsDeleteModalOpen(false);
     onClose(); // Optionally close the post modal
@@ -106,6 +137,11 @@ export default function PostModal({ isOpen, onClose, post }) {
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
+    if (!auth.currentUser) {
+      router.push("/login"); // Redirect to login page if not authenticated
+      return;
+    }
+
     if (comment) {
       const newComment = { userId: auth.currentUser.uid, text: comment };
       const updatedComments = [...comments, newComment];
@@ -127,6 +163,8 @@ export default function PostModal({ isOpen, onClose, post }) {
     slidesToScroll: 1,
   };
 
+  const currentUser = auth.currentUser; // Current user data
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <button
@@ -135,7 +173,6 @@ export default function PostModal({ isOpen, onClose, post }) {
       >
         &times;
       </button>
-      {/* photo secsion */}
       <div className="bg-gray-800 w-[80vw] h-[90vh] p-4 rounded-lg shadow-lg relative flex">
         <div className="w-1/2 h-full overflow-hidden rounded-lg mr-4">
           {post.photoUrls && post.photoUrls.length > 0 ? (
@@ -160,7 +197,6 @@ export default function PostModal({ isOpen, onClose, post }) {
           )}
         </div>
 
-        {/* user secsion */}
         <div className="w-1/3 h-full overflow-hidden rounded-lg mr-4">
           <div className="flex items-center mb-4 border-b border-gray-600 pb-4">
             <img
@@ -177,7 +213,6 @@ export default function PostModal({ isOpen, onClose, post }) {
             <h2 className="text-2xl font-bold text-white mb-2">{post.title}</h2>
           )}
 
-          {/* post description secsion */}
           <h4 className="text-lg font-semibold text-white mb-1">
             Ingredients:
           </h4>
@@ -214,21 +249,27 @@ export default function PostModal({ isOpen, onClose, post }) {
             •••
           </button>
           {isMenuOpen && (
-            <div
-              ref={menuRef}
-              className="absolute right-6 bg-gray-800 border border-gray-700 rounded mt-6 w-40 shadow-lg"
-            >
+            <div className="menu-container absolute right-6 bg-gray-800 border border-gray-700 rounded mt-6 w-40 shadow-lg">
               <button
-                onClick={() => setIsDeleteModalOpen(true)} // Open the delete confirmation modal
+                onClick={handleReport}
                 className="w-full text-left text-red-500 px-4 py-2 hover:bg-gray-700 flex items-center"
               >
                 <FlagIcon className="w-5 h-5 mr-3" />
                 Report Post
               </button>
+              {/* Show delete button if current user is admin */}
+              {currentUser?.email === "admin@gmail.com" && (
+                <button
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="w-full text-left text-red-500 px-4 py-2 hover:bg-gray-700 flex items-center"
+                >
+                  <TrashIcon className="w-5 h-5 mr-3" />
+                  Delete Post
+                </button>
+              )}
             </div>
           )}
 
-          {/* comment secsion */}
           <h3 className="text-lg font-semibold mb-2 text-white">Comments</h3>
           <div
             className="flex-1 overflow-y-auto bg-gray-600 p-4 rounded-lg mb-4"
@@ -258,7 +299,7 @@ export default function PostModal({ isOpen, onClose, post }) {
           </button>
           <form
             onSubmit={handleCommentSubmit}
-            className="flex bg-gray-800 p-2 rounded-lg"
+            className="flex bg-gray-800 text-white p-2 rounded-lg"
           >
             <input
               type="text"
@@ -276,6 +317,30 @@ export default function PostModal({ isOpen, onClose, post }) {
           </form>
         </div>
       </div>
+
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg">
+            <h2 className="text-xl font-semibold text-white mb-4">
+              Are you sure you want to delete this post?
+            </h2>
+            <div className="flex gap-4">
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

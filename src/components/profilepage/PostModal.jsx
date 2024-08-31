@@ -102,6 +102,28 @@ export default function PostModal({ isOpen, onClose, post }) {
   };
 
   const handleDelete = async () => {
+    const storage = getStorage();
+
+    // Delete each image in the `photoUrls` array
+    if (post.photoUrls) {
+      for (const url of post.photoUrls) {
+        // Extract the file name from the URL
+        const fileName = url.substring(url.lastIndexOf("/") + 1);
+        const storageRef = ref(
+          storage,
+          `foodPhotos/${auth.currentUser.uid}/${fileName}`
+        );
+
+        try {
+          await deleteObject(storageRef);
+          console.log(`Successfully deleted ${fileName}`);
+        } catch (error) {
+          console.error(`Failed to delete ${fileName}:`, error.message);
+        }
+      }
+    }
+
+    // Delete the post document from Firestore
     await deleteDoc(doc(db, "foodPosts", post.id));
     setIsDeleteModalOpen(false);
     onClose(); // Optionally close the post modal

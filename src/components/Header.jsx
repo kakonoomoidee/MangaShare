@@ -5,6 +5,7 @@ import { FaUserCircle, FaSignInAlt, FaSignOutAlt } from "react-icons/fa";
 import { useState, useEffect, useRef } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import logo from "../images/assets/header-logo.png"; // Import the image
+import NotificationCenter from "../components/notification/NotificationCenter"; // Import NotificationCenter
 
 export default function Header() {
   const [user] = useAuthState(auth);
@@ -63,19 +64,23 @@ export default function Header() {
       <div className="flex items-center">
         <img src={logo.src} alt="Logo" className="w-14 h-auto" />
       </div>
-      <div className="flex-grow flex justify-end">
+
+      <div className="flex-grow flex justify-end items-center space-x-4">
+        {/* Notification center is added here */}
+        <NotificationCenter />
+        {/* login button is added here */}
         {user ? (
           <div className="relative flex items-center">
             {userData?.photoURL ? (
               <img
                 src={userData.photoURL}
                 alt="Profile"
-                className="w-9 h-9 rounded-full cursor-pointer"
+                className="w-7 h-7 rounded-full cursor-pointer"
                 onClick={toggleDropdown}
               />
             ) : (
               <FaUserCircle
-                className="text-3xl text-gray-400 cursor-pointer"
+                className="text-xl text-gray-400 cursor-pointer"
                 onClick={toggleDropdown}
               />
             )}
@@ -98,7 +103,7 @@ export default function Header() {
         ) : (
           <div className="relative">
             <FaUserCircle
-              className="text-3xl text-gray-400 cursor-pointer"
+              className="text-2xl text-gray-400 cursor-pointer"
               onClick={toggleDropdown}
             />
             {isDropdownOpen && (
