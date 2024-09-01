@@ -11,7 +11,6 @@ import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 import profile from "../../images/assets/profile-user.png";
 import ReportModal from "./ReportModal";
-import { getStorage, ref, deleteObject } from "firebase/storage";
 
 export default function PostModal({ isOpen, onClose, post }) {
   const [likes, setLikes] = useState(post.likes || 0);
@@ -115,27 +114,6 @@ export default function PostModal({ isOpen, onClose, post }) {
   };
 
   const handleDelete = async () => {
-    const storage = getStorage();
-
-    // Delete each image in the `photoUrls` array
-    if (post.photoUrls) {
-      for (const url of post.photoUrls) {
-        // Extract the file name from the URL
-        const fileName = url.substring(url.lastIndexOf("/") + 1);
-        const storageRef = ref(
-          storage,
-          `foodPhotos/${auth.currentUser.uid}/${fileName}`
-        );
-
-        try {
-          await deleteObject(storageRef);
-          console.log(`Successfully deleted ${fileName}`);
-        } catch (error) {
-          console.error(`Failed to delete ${fileName}:`, error.message);
-        }
-      }
-    }
-
     // Delete the post document from Firestore
     await deleteDoc(doc(db, "foodPosts", post.id));
     setIsDeleteModalOpen(false);

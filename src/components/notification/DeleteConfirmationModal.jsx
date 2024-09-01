@@ -4,20 +4,22 @@ export default function DeleteConfirmationModal({
   isOpen,
   onClose,
   onConfirm,
+  title, // Add title prop
 }) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div className="bg-gray-800 text-white rounded-lg p-6 w-1/3">
-        <h2 className="text-lg font-semibold mb-4">Delete post?</h2>
-        <p className="mb-6">Are you sure you want to delete this post?</p>
+        <h2 className="text-lg font-semibold mb-4">
+          {title || "Are you sure?"}
+        </h2>
         <div className="flex justify-end">
           <button
             onClick={onConfirm}
             className="bg-red-500 text-white px-4 py-2 rounded-lg mr-2 hover:bg-red-600"
           >
-            Delete
+            Confirm
           </button>
           <button
             onClick={onClose}

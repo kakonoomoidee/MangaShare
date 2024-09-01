@@ -2,7 +2,8 @@ import { useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import Post from "./Post";
-import User from "./User"; // Asumsikan Anda memiliki komponen User untuk menampilkan detail pengguna
+import User from "./User"; // Assumes you have a User component to display user details
+import { FaSearch } from "react-icons/fa";
 
 export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -13,9 +14,9 @@ export default function SearchPage() {
     if (!searchTerm.trim()) return;
 
     try {
-      // Query untuk mencari postingan berdasarkan judul
+      // Query to search posts by title
       const postsQuery = query(
-        collection(db, "posts"),
+        collection(db, "foodPosts"),
         where("title", ">=", searchTerm),
         where("title", "<=", searchTerm + "\uf8ff")
       );
@@ -25,7 +26,7 @@ export default function SearchPage() {
         ...doc.data(),
       }));
 
-      // Query untuk mencari pengguna berdasarkan nama pengguna
+      // Query to search users by username
       const usersQuery = query(
         collection(db, "users"),
         where("username", ">=", searchTerm),
@@ -37,7 +38,7 @@ export default function SearchPage() {
         ...doc.data(),
       }));
 
-      // Menyimpan hasil pencarian di state
+      // Update state with search results
       setPostResults(fetchedPostResults);
       setUserResults(fetchedUserResults);
     } catch (error) {
@@ -46,41 +47,39 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-800">
-      <div className="w-full max-w-md p-6 bg-gray-900 rounded-lg shadow-lg">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by post title or username"
-          className="w-full p-2 mb-4 border border-gray-600 rounded bg-gray-700 text-white"
-        />
-        <button
-          onClick={handleSearch}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
-        >
-          Search
-        </button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-800">
+      <div className="w-full max-w-4xl p-6 bg-gray-900 rounded-lg shadow-lg">
+        <div className="relative mb-6">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by post title or username"
+            className="w-full p-3 border border-gray-600 rounded bg-gray-700 text-white placeholder-gray-300 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={handleSearch}
+            className="absolute inset-y-0 right-5 flex items-center pl-3"
+          >
+            <FaSearch className="text-gray-400 hover:text-gray-200" />
+          </button>
+        </div>
 
-        <div className="mt-4">
-          <h2 className="text-xl font-bold text-white"></h2>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-4">Posts</h2>
           {postResults.length > 0 ? (
-            postResults.map((post) => (
-              <Post key={post.id} post={post} />
-            ))
+            postResults.map((post) => <Post key={post.id} post={post} />)
           ) : (
-            <p className="text-white"></p>
+            <p className="text-white">No posts found.</p>
           )}
         </div>
 
-        <div className="mt-4">
-          <h2 className="text-xl font-bold text-white"></h2>
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-4">Users</h2>
           {userResults.length > 0 ? (
-            userResults.map((user) => (
-              <User key={user.id} user={user} />
-            ))
+            userResults.map((user) => <User key={user.id} user={user} />)
           ) : (
-            <p className="text-white"></p>
+            <p className="text-white">No users found.</p>
           )}
         </div>
       </div>

@@ -6,4 +6,4 @@ export default function Post({ post }) {
       {/* Add any additional post details you want to show */}
     </div>
   );
-}
+} 

@@ -6,10 +6,11 @@ import {
   onSnapshot,
   doc,
   getDoc,
+  getDocs,
 } from "firebase/firestore";
 import { UserIcon } from "@heroicons/react/24/outline";
 import { db } from "../../lib/firebase";
-import PostModal from "./PostModal";
+import PostModal from "./PostModal"; // Import the PostModal component
 import profile from "../../images/assets/profile-user.png"; // Ensure you import the default profile image
 
 export default function ReportPage() {
@@ -18,34 +19,45 @@ export default function ReportPage() {
   const [currentPost, setCurrentPost] = useState(null);
 
   useEffect(() => {
-    const fetchReports = async () => {
-      const reportsRef = collection(db, "reports");
-      const reportsQuery = query(reportsRef, orderBy("createdAt", "desc"));
+    const fetchReportsAndPosts = async () => {
+      try {
+        // Step 1: Fetch all reports
+        const reportsRef = collection(db, "reports");
+        const reportsQuery = query(reportsRef);
+        const reportsSnapshot = await getDocs(reportsQuery);
 
-      const unsubscribe = onSnapshot(reportsQuery, async (snapshot) => {
-        console.log("Reports snapshot:", snapshot.docs); // Log reports
+        const postIds = reportsSnapshot.docs.map(
+          (docSnap) => docSnap.data().postId
+        );
 
-        const postsArray = await Promise.all(
-          snapshot.docs.map(async (docSnap) => {
-            const data = docSnap.data();
-            console.log("Report data:", data); // Log report data
+        if (postIds.length === 0) {
+          setPosts([]);
+          return;
+        }
 
-            const postId = data.postId;
-            const postRef = doc(db, "foodPosts", postId);
-            const postDoc = await getDoc(postRef);
-            const postData = postDoc.exists() ? postDoc.data() : {};
-            console.log("Post data:", postData); // Log post data
+        // Step 2: Fetch posts based on the postIds obtained from reports
+        const postsRef = collection(db, "foodPosts");
+        const postsQuery = query(postsRef, orderBy("createdAt", "desc"));
+        const allPostsSnapshot = await getDocs(postsQuery);
 
-            const userRef = doc(db, "users", postData.userId);
+        const postsArray = allPostsSnapshot.docs
+          .map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          }))
+          .filter((post) => postIds.includes(post.id));
+
+        // Fetch user data for each post
+        const postsWithAuthorData = await Promise.all(
+          postsArray.map(async (post) => {
+            const userRef = doc(db, "users", post.userId);
             const userDoc = await getDoc(userRef);
             const userData = userDoc.exists() ? userDoc.data() : {};
-            console.log("User data:", userData); // Log user data
 
             return {
-              id: postId,
-              ...postData,
-              photoUrls: postData.photoUrls || [],
-              ingredients: postData.ingredients || [],
+              ...post,
+              photoUrls: post.photoUrls || [],
+              ingredients: post.ingredients || [],
               author: {
                 username: userData.username || "Unknown User",
                 photoURL: userData.photoURL || profile.src,
@@ -53,14 +65,14 @@ export default function ReportPage() {
             };
           })
         );
-        console.log("Posts array:", postsArray); // Log final posts array
-        setPosts(postsArray);
-      });
 
-      return () => unsubscribe();
+        setPosts(postsWithAuthorData);
+      } catch (error) {
+        console.error("Error fetching posts and reports:", error);
+      }
     };
 
-    fetchReports();
+    fetchReportsAndPosts();
   }, []);
 
   const handlePostClick = (post) => {
@@ -75,16 +87,16 @@ export default function ReportPage() {
 
   return (
     <div className="bg-gray-800 min-h-screen p-4 flex flex-col items-center">
-      <div className="flex flex-wrap gap-4 justify-center">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
         {posts.length > 0 ? (
           posts.map((post) => (
             <div
               key={post.id}
-              className="bg-gray-700 hover:bg-gray-600 text-white shadow rounded-lg overflow-hidden flex relative cursor-pointer w-[800px] h-auto"
+              className="bg-gray-700 hover:bg-gray-600 text-white shadow rounded-lg overflow-hidden flex flex-col cursor-pointer"
               onClick={() => handlePostClick(post)}
             >
               {/* Image Section */}
-              <div className="w-full h-52 overflow-hidden">
+              <div className="w-full h-40 overflow-hidden">
                 {post.photoUrls.length > 0 ? (
                   post.photoUrls.map((url, index) => (
                     <img
@@ -131,15 +143,17 @@ export default function ReportPage() {
                   <img
                     src={post.author.photoURL}
                     alt="User"
-                    className="w-7 h-7 rounded-full mr-3"
+                    className="w-6 h-6 rounded-full mr-3"
                   />
-                  <h3 className="text-white">{post.author.username}</h3>
+                  <h3 className="text-white text-sm">{post.author.username}</h3>
                 </div>
               </div>
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-400">No posts available</div>
+          <div className="text-center text-gray-400 col-span-full">
+            No report available comunity are clean
+          </div>
         )}
       </div>
       {currentPost && (

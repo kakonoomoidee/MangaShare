@@ -1,16 +1,21 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Slider from "react-slick";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import {
-  HeartIcon,
-  PaperAirplaneIcon,
-  FlagIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline";
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  writeBatch,
+} from "firebase/firestore";
 import { db, auth } from "../../lib/firebase";
 import profile from "../../images/assets/profile-user.png";
-import { getStorage, ref, deleteObject } from "firebase/storage";
+import DeleteConfirmationModal from "../notification/DeleteConfirmationModal";
 
 export default function PostModal({ isOpen, onClose, post }) {
   const [likes, setLikes] = useState(post.likes || 0);
@@ -19,19 +24,23 @@ export default function PostModal({ isOpen, onClose, post }) {
   const [hasLiked, setHasLiked] = useState(false);
   const [user, setUser] = useState(null);
   const [usernames, setUsernames] = useState({});
+  const [reports, setReports] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // State for delete confirmation modal
-  const router = useRouter(); // Initialize useRouter
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleteFromReportModalOpen, setIsDeleteFromReportModalOpen] =
+    useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!post || !post.id) return;
 
     const fetchPostData = async () => {
-      const postDoc = await getDoc(doc(db, "foodPosts", post.id));
+      const postRef = doc(db, "foodPosts", post.id);
+      const postDoc = await getDoc(postRef);
       if (postDoc.exists()) {
         const data = postDoc.data();
         if (!data.likes) {
-          await updateDoc(doc(db, "foodPosts", post.id), {
+          await updateDoc(postRef, {
             likes: 0,
             comments: [],
             likedUsers: [],
@@ -44,15 +53,39 @@ export default function PostModal({ isOpen, onClose, post }) {
 
     const fetchUserData = async () => {
       if (post.userId) {
-        const userDoc = await getDoc(doc(db, "users", post.userId));
+        const userRef = doc(db, "users", post.userId);
+        const userDoc = await getDoc(userRef);
         if (userDoc.exists()) {
           setUser(userDoc.data());
         }
       }
     };
 
+    const fetchReports = async () => {
+      const reportsRef = collection(db, "reports");
+      const reportsQuery = query(reportsRef, where("postId", "==", post.id));
+      const reportsSnapshot = await getDocs(reportsQuery);
+
+      const reportsArray = await Promise.all(
+        reportsSnapshot.docs.map(async (docSnap) => {
+          const reportData = docSnap.data();
+          if (reportData.reportedBy) {
+            const userRef = doc(db, "users", reportData.reportedBy);
+            const userDoc = await getDoc(userRef);
+            if (userDoc.exists()) {
+              reportData.reportedByUsername = userDoc.data().username;
+            }
+          }
+          return reportData;
+        })
+      );
+
+      setReports(reportsArray);
+    };
+
     fetchPostData();
     fetchUserData();
+    fetchReports();
   }, [post]);
 
   useEffect(() => {
@@ -60,7 +93,8 @@ export default function PostModal({ isOpen, onClose, post }) {
       const usernamesObj = {};
       for (const comment of comments) {
         if (comment.userId) {
-          const userDoc = await getDoc(doc(db, "users", comment.userId));
+          const userRef = doc(db, "users", comment.userId);
+          const userDoc = await getDoc(userRef);
           if (userDoc.exists()) {
             usernamesObj[comment.userId] = userDoc.data().username;
           }
@@ -74,7 +108,6 @@ export default function PostModal({ isOpen, onClose, post }) {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Check if click is outside the menu
       if (!event.target.closest(".menu-container")) {
         setIsMenuOpen(false);
       }
@@ -86,7 +119,7 @@ export default function PostModal({ isOpen, onClose, post }) {
 
   const handleLike = async () => {
     if (!auth.currentUser) {
-      router.push("/login"); // Redirect to login page if not authenticated
+      router.push("/login");
       return;
     }
 
@@ -108,37 +141,31 @@ export default function PostModal({ isOpen, onClose, post }) {
   };
 
   const handleDelete = async () => {
-    const storage = getStorage();
-
-    // Delete each image in the `photoUrls` array
-    if (post.photoUrls) {
-      for (const url of post.photoUrls) {
-        // Extract the file name from the URL
-        const fileName = url.substring(url.lastIndexOf("/") + 1);
-        const storageRef = ref(
-          storage,
-          `foodPhotos/${auth.currentUser.uid}/${fileName}`
-        );
-
-        try {
-          await deleteObject(storageRef);
-          console.log(`Successfully deleted ${fileName}`);
-        } catch (error) {
-          console.error(`Failed to delete ${fileName}:`, error.message);
-        }
-      }
-    }
-
-    // Delete the post document from Firestore
-    await deleteDoc(doc(db, "foodPosts", post.id));
+    const postRef = doc(db, "foodPosts", post.id);
+    await deleteDoc(postRef);
     setIsDeleteModalOpen(false);
-    onClose(); // Optionally close the post modal
+    onClose();
+  };
+
+  const handleDeleteFromReport = async () => {
+    const reportsRef = collection(db, "reports");
+    const reportsQuery = query(reportsRef, where("postId", "==", post.id));
+    const reportsSnapshot = await getDocs(reportsQuery);
+
+    const batch = writeBatch(db);
+    reportsSnapshot.docs.forEach((docSnap) => {
+      batch.delete(docSnap.ref);
+    });
+
+    await batch.commit();
+    setIsDeleteFromReportModalOpen(false);
+    onClose();
   };
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!auth.currentUser) {
-      router.push("/login"); // Redirect to login page if not authenticated
+      router.push("/login");
       return;
     }
 
@@ -162,8 +189,6 @@ export default function PostModal({ isOpen, onClose, post }) {
     slidesToShow: 1,
     slidesToScroll: 1,
   };
-
-  const currentUser = auth.currentUser; // Current user data
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -249,98 +274,61 @@ export default function PostModal({ isOpen, onClose, post }) {
             •••
           </button>
           {isMenuOpen && (
-            <div className="menu-container absolute right-6 bg-gray-800 border border-gray-700 rounded mt-6 w-40 shadow-lg">
+            <div className="menu-container absolute right-6 bg-gray-800 border border-gray-700 rounded mt-6 shadow-lg">
               <button
-                onClick={handleReport}
+                onClick={() => setIsDeleteModalOpen(true)}
                 className="w-full text-left text-red-500 px-4 py-2 hover:bg-gray-700 flex items-center"
               >
-                <FlagIcon className="w-5 h-5 mr-3" />
-                Report Post
+                <TrashIcon className="w-5 h-5 mr-3" />
+                Delete Post
               </button>
-              {/* Show delete button if current user is admin */}
-              {currentUser?.email === "admin@gmail.com" && (
-                <button
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  className="w-full text-left text-red-500 px-4 py-2 hover:bg-gray-700 flex items-center"
-                >
-                  <TrashIcon className="w-5 h-5 mr-3" />
-                  Delete Post
-                </button>
-              )}
+              <button
+                onClick={() => setIsDeleteFromReportModalOpen(true)}
+                className="w-full text-left text-yellow-600 px-4 py-2 hover:bg-gray-700 flex items-center"
+              >
+                <TrashIcon className="w-5 h-5 mr-3" />
+                Delete From Report
+              </button>
             </div>
           )}
 
-          <h3 className="text-lg font-semibold mb-2 text-white">Comments</h3>
+          {/* Reported by section */}
+          <h3 className="text-lg font-semibold mb-2 text-white">Reported by</h3>
           <div
             className="flex-1 overflow-y-auto bg-gray-600 p-4 rounded-lg mb-4"
             style={{ maxHeight: "600px" }}
           >
             <ul className="mb-4">
-              {comments.length > 0 ? (
-                comments.map((comment, index) => (
+              {reports.length > 0 ? (
+                reports.map((report, index) => (
                   <li key={index} className="mb-2 text-white">
-                    <strong>{usernames[comment.userId] || "User"}</strong>:{" "}
-                    {comment.text}
+                    <strong>
+                      {report.reportedByUsername || "Unknown User"}
+                    </strong>
+                    : {report.reason || "No reason provided"}
                   </li>
                 ))
               ) : (
-                <li className="text-gray-400">No comments yet.</li>
+                <li className="text-gray-400">No reports available.</li>
               )}
             </ul>
           </div>
-          <button
-            onClick={handleLike}
-            className={`flex items-center py-2 w-14 rounded-lg mb-4 ${
-              hasLiked ? "text-red-500" : "text-white"
-            }`}
-          >
-            <HeartIcon className="w-6 h-6 mr-2" />
-            {likes}
-          </button>
-          <form
-            onSubmit={handleCommentSubmit}
-            className="flex bg-gray-800 text-white p-2 rounded-lg"
-          >
-            <input
-              type="text"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg mr-2 bg-gray-600"
-              placeholder="Add a comment..."
-            />
-            <button
-              type="submit"
-              className="text-white px-4 py-2 rounded-lg flex items-center"
-            >
-              <PaperAirplaneIcon className="w-5 h-5" />
-            </button>
-          </form>
         </div>
       </div>
 
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold text-white mb-4">
-              Are you sure you want to delete this post?
-            </h2>
-            <div className="flex gap-4">
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                Delete
-              </button>
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Are you sure you want to delete this post?"
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteFromReportModalOpen}
+        onClose={() => setIsDeleteFromReportModalOpen(false)}
+        onConfirm={handleDeleteFromReport}
+        title="Are you sure you want to remove this post from the reports?"
+      />
     </div>
   );
 }
