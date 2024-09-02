@@ -12,28 +12,27 @@ import { useState, useEffect, useRef } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import logo from "../images/assets/logov2.png";
 import NotificationCenter from "../components/notification/NotificationCenter";
+import DeleteConfirmationModal from "../components/notification/LogoutConfirmationModal";
 
 export default function Header() {
   const [user] = useAuthState(auth);
   const [userData, setUserData] = useState(null);
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  // State for light/dark mode
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const dropdownRef = useRef(null);
 
   // Fetch user data from Firestore
   useEffect(() => {
     const fetchUserData = async () => {
-      if (user && user.uid) {
+      if (user?.uid) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           setUserData(userDoc.data());
         }
       }
     };
-
     fetchUserData();
   }, [user]);
 
@@ -42,10 +41,14 @@ export default function Header() {
     setIsDropdownOpen(false);
   };
 
-  const handleLogoutClick = async () => {
+  const handleLogoutClick = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    setIsModalOpen(false);
     try {
       await auth.signOut();
-      setIsDropdownOpen(false);
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -57,11 +60,7 @@ export default function Header() {
 
   const toggleTheme = () => {
     setIsDarkMode((prev) => !prev);
-    if (isDarkMode) {
-      document.documentElement.classList.remove("dark");
-    } else {
-      document.documentElement.classList.add("dark");
-    }
+    document.documentElement.classList.toggle("dark", !isDarkMode);
   };
 
   useEffect(() => {
@@ -151,6 +150,12 @@ export default function Header() {
           </div>
         )}
       </div>
+      {/* Logout Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmLogout}
+      />
     </header>
   );
 }
