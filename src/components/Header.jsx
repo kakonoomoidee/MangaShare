@@ -1,11 +1,11 @@
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "../lib/firebase";
 import { useRouter } from "next/navigation";
-import { FaUserCircle, FaSignInAlt, FaSignOutAlt } from "react-icons/fa";
+import { FaUserCircle, FaSignInAlt, FaSignOutAlt, FaSun, FaMoon } from "react-icons/fa"; // Import icons for sun and moon
 import { useState, useEffect, useRef } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import logo from "../images/assets/header-logo.png"; // Import the image
-import NotificationCenter from "../components/notification/NotificationCenter"; // Import NotificationCenter
+import logo from "../images/assets/header-logo.png";
+import NotificationCenter from "../components/notification/NotificationCenter";
 
 export default function Header() {
   const [user] = useAuthState(auth);
@@ -13,6 +13,9 @@ export default function Header() {
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // State for light/dark mode
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Fetch user data from Firestore
   useEffect(() => {
@@ -46,6 +49,15 @@ export default function Header() {
     setIsDropdownOpen((prev) => !prev);
   };
 
+  const toggleTheme = () => {
+    setIsDarkMode((prev) => !prev);
+    if (isDarkMode) {
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -66,9 +78,14 @@ export default function Header() {
       </div>
 
       <div className="flex-grow flex justify-end items-center space-x-4">
-        {/* Notification center is added here */}
         <NotificationCenter />
-        {/* login button is added here */}
+        {/* Light/Dark mode toggle button */}
+        <button
+          onClick={toggleTheme}
+          className="text-gray-400 focus:outline-none"
+        >
+          {isDarkMode ? <FaSun className="text-2xl" /> : <FaMoon className="text-2xl" />}
+        </button>
         {user ? (
           <div className="relative flex items-center">
             {userData?.photoURL ? (
