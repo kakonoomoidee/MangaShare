@@ -1,10 +1,16 @@
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "../lib/firebase";
 import { useRouter } from "next/navigation";
-import { FaUserCircle, FaSignInAlt, FaSignOutAlt, FaSun, FaMoon } from "react-icons/fa"; // Import icons for sun and moon
+import {
+  FaUserCircle,
+  FaSignInAlt,
+  FaSignOutAlt,
+  FaSun,
+  FaMoon,
+} from "react-icons/fa"; // Import icons for sun and moon
 import { useState, useEffect, useRef } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import logo from "../images/assets/header-logo.png";
+import logo from "../images/assets/logov2.png";
 import NotificationCenter from "../components/notification/NotificationCenter";
 
 export default function Header() {
@@ -84,7 +90,11 @@ export default function Header() {
           onClick={toggleTheme}
           className="text-gray-400 focus:outline-none"
         >
-          {isDarkMode ? <FaSun className="text-2xl" /> : <FaMoon className="text-2xl" />}
+          {isDarkMode ? (
+            <FaSun className="text-2xl" />
+          ) : (
+            <FaMoon className="text-2xl" />
+          )}
         </button>
         {user ? (
           <div className="relative flex items-center">
