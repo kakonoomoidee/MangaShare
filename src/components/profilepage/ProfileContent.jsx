@@ -1,16 +1,18 @@
-// ProfileContent.jsx
 import { useState, useEffect } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "../../lib/firebase";
 import EditProfileModal from "./EditProfileModal";
 import UserPosts from "./UserPosts";
-import profile from "../../images/assets/profile-user.png"; // Import the image
+import LikedPosts from "./LikedPosts";
+import profile from "../../images/assets/profile-user.png";
+import { HeartIcon, UserIcon } from "@heroicons/react/24/outline";
 
 export default function ProfileContent() {
   const [user] = useAuthState(auth);
   const [profileData, setProfileData] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showLikedPosts, setShowLikedPosts] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -60,14 +62,46 @@ export default function ProfileContent() {
             </button>
           </div>
         </div>
+
+        {/* Button for toggling between user posts and liked posts */}
+        <div className="flex space-x-4 mb-1">
+          <button
+            onClick={() => setShowLikedPosts(false)}
+            className={`py-2 px-4 flex items-center text-white transition duration-200 ${
+              !showLikedPosts
+                ? "border-b-2 border-white"
+                : "border-b-2 border-transparent"
+            }`}
+          >
+            <UserIcon className="w-4 h-4 mr-1" />
+            My Posts
+          </button>
+          <button
+            onClick={() => setShowLikedPosts(true)}
+            className={`py-2 px-4 flex items-center text-white transition duration-200 ${
+              showLikedPosts
+                ? "border-b-2 border-white"
+                : "border-b-2 border-transparent"
+            }`}
+          >
+            <HeartIcon className="w-4 h-4 mr-1" />
+            Liked Posts
+          </button>
+        </div>
+
         {/* Horizontal line */}
-        <hr className="border-gray-600 mb-6" />
+        <hr className="border-gray-600" />
       </div>
 
-      {/* User posts */}
+      {/* User posts or liked posts */}
       <div className="overflow-y-auto flex-grow">
-        <UserPosts userId={user.uid} />
+        {showLikedPosts ? (
+          <LikedPosts userId={user.uid} />
+        ) : (
+          <UserPosts userId={user.uid} />
+        )}
       </div>
+
       <EditProfileModal isOpen={isModalOpen} onClose={handleModalClose} />
     </div>
   );

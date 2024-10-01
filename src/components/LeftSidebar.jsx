@@ -1,5 +1,5 @@
 // src/components/LeftSidebar.jsx
-import { FaHome, FaSearch, FaPlus, FaUser, FaFlag } from "react-icons/fa";
+import { FaHome, FaSearch, FaPlus, FaUser, FaFlag, FaComment } from "react-icons/fa";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../lib/firebase";
 import { useRouter } from "next/navigation";
@@ -40,6 +40,13 @@ export default function LeftSidebar() {
           Create
         </button>
         <button
+          onClick={() => handleNavigation("/chat")}
+          className="flex items-center text-gray-300 hover:bg-gray-800 p-2 rounded"
+        >
+          <FaComment className="mr-3" />
+          Chat
+        </button>
+        <button
           onClick={() => handleNavigation("/profile")}
           className="flex items-center text-gray-300 hover:bg-gray-800 p-2 rounded"
         >
@@ -50,7 +57,7 @@ export default function LeftSidebar() {
         {user?.email === "admin@gmail.com" && (
           <button
             onClick={() => handleNavigation("/report")}
-            className="flex items-center text-gray-300 hover:bg-gray-800 p-2 rounded"
+            className="flex items-center text-yellow-600 hover:bg-gray-800 p-2 rounded text"
           >
             <FaFlag className="mr-3" />
             Report

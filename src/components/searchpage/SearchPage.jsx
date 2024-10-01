@@ -1,85 +1,71 @@
-import { useState } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../lib/firebase";
-import Post from "./Post";
-import User from "./User"; // Assumes you have a User component to display user details
-import { FaSearch } from "react-icons/fa";
+import { useState } from "react"; // Import necessary hooks
+import { db } from "../../lib/firebase"; // Assuming db is used somewhere else
+import UserItem from "./UserItem"; // Assuming you have this component
+import PostItem from "./PostItem"; // Assuming you have this component
+import { FaSearch } from "react-icons/fa"; // Import search icon from react-icons
 
-export default function SearchPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [postResults, setPostResults] = useState([]);
-  const [userResults, setUserResults] = useState([]);
-
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) return;
-
-    try {
-      // Query to search posts by title
-      const postsQuery = query(
-        collection(db, "foodPosts"),
-        where("title", ">=", searchTerm),
-        where("title", "<=", searchTerm + "\uf8ff")
-      );
-      const postSnapshot = await getDocs(postsQuery);
-      const fetchedPostResults = postSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      // Query to search users by username
-      const usersQuery = query(
-        collection(db, "users"),
-        where("username", ">=", searchTerm),
-        where("username", "<=", searchTerm + "\uf8ff")
-      );
-      const userSnapshot = await getDocs(usersQuery);
-      const fetchedUserResults = userSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      // Update state with search results
-      setPostResults(fetchedPostResults);
-      setUserResults(fetchedUserResults);
-    } catch (error) {
-      console.error("Error searching:", error);
-    }
-  };
+export default function ChatForm() {
+  const [showPostItem, setShowPostItem] = useState(false); // State to toggle view
+  const [searchQuery, setSearchQuery] = useState(""); // State for search input
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-800">
-      <div className="w-full max-w-4xl p-6 bg-gray-900 rounded-lg shadow-lg">
-        <div className="relative mb-6">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by post title or username"
-            className="w-full p-3 border border-gray-600 rounded bg-gray-700 text-white placeholder-gray-300 transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+    <div className="flex justify-center items-center bg-gray-800 p-6">
+      <div className="bg-gray-900 w-[70vw] h-[80vh] rounded-lg shadow-lg flex flex-col">
+        {/* Search form */}
+        <div className="p-4 flex justify-center">
+          <div className="flex w-4/5 items-center">
+            {/* Center items within the flex container */}
+            <input
+              type="text"
+              placeholder={`Search ${showPostItem ? "Posts" : "Users"}`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)} // Update search query
+              className="flex-1 p-2 rounded-full bg-gray-700 text-white placeholder-gray-500 focus:outline-none"
+            />
+            <button
+              onClick={() => {
+                console.log(`Searching for: ${searchQuery}`);
+              }}
+              className="flex items-center justify-center w-10 h-10 ml-2 rounded-full bg-gray-700 text-white hover:bg-gray-800 transition duration-200"
+            >
+              <FaSearch className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Button for toggling between user item and post item */}
+        <div className="flex space-x-4 mb-1">
           <button
-            onClick={handleSearch}
-            className="absolute inset-y-0 right-5 flex items-center pl-3"
+            className={`py-2 px-4 flex items-center text-white transition duration-200 ${
+              !showPostItem
+                ? "border-b-2 border-white"
+                : "border-b-2 border-transparent"
+            }`}
+            onClick={() => setShowPostItem(false)} // Update state on click
           >
-            <FaSearch className="text-gray-400 hover:text-gray-200" />
+            Users
+          </button>
+          <button
+            className={`py-2 px-4 flex items-center text-white transition duration-200 ${
+              showPostItem
+                ? "border-b-2 border-white"
+                : "border-b-2 border-transparent"
+            }`}
+            onClick={() => setShowPostItem(true)} // Update state on click
+          >
+            Posts
           </button>
         </div>
 
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Posts</h2>
-          {postResults.length > 0 ? (
-            postResults.map((post) => <Post key={post.id} post={post} />)
-          ) : (
-            <p className="text-white">No posts found.</p>
-          )}
-        </div>
+        {/* Horizontal line */}
+        <hr className="border-gray-600 mb-5" />
 
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-4">Users</h2>
-          {userResults.length > 0 ? (
-            userResults.map((user) => <User key={user.id} user={user} />)
+        {/* Conditional rendering based on the selected state */}
+        <div className="flex-1 overflow-y-auto">
+          {!showPostItem ? (
+            <UserItem searchQuery={searchQuery} /> // Pass search query to UserItem
           ) : (
-            <p className="text-white">No users found.</p>
+            <PostItem searchQuery={searchQuery} /> // Pass search query to PostItem
           )}
         </div>
       </div>

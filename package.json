@@ -24,7 +24,8 @@
     "react-photo-editor": "^2.1.4",
     "react-slick": "^0.30.2",
     "react-toastify": "^10.0.5",
-    "slick-carousel": "^1.8.1"
+    "slick-carousel": "^1.8.1",
+    "socket.io-client": "^4.8.0"
   },
   "devDependencies": {
     "postcss": "^8",
