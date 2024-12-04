@@ -113,7 +113,7 @@ export default function CreatePostPage() {
 
   return (
     <div className="flex justify-center items-center bg-gray-800 p-6">
-      <div className="bg-gray-900 w-[70vw] p-6 rounded-lg shadow-lg flex">
+      <div className="bg-gray-900  w-[70vw] p-6 rounded-lg shadow-lg flex">
         <div className="w-1/2 overflow-hidden rounded-lg mr-4">
           {photoUrls.length > 0 ? (
             <Slider {...sliderSettings}>
@@ -195,6 +195,7 @@ export default function CreatePostPage() {
                 required
                 rows="6"
                 className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                placeholder="give some instructur how to "
               />
             </div>
             <button
